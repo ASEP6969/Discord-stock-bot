@@ -8,6 +8,7 @@ from utils.api import (
     fetch_stock_price, fetch_stock_info,
     fetch_historical_prices, get_usd_to_idr
 )
+from discord.app_commands import checks
 
 class StockCog(commands.Cog):
     def __init__(self, bot: commands.Bot, db: Database):
@@ -18,8 +19,9 @@ class StockCog(commands.Cog):
     def cog_unload(self):
         self.daily_update_loop.cancel()
 
-    @app_commands.command(name="infosh", description="Lihat informasi harga saham dunia")
-    @app_commands.describe(symbol="Simbol saham (contoh: AAPL, TSLA, BBCA.JK)")
+@app_commands.checks.cooldown(rate=3, per=10.0, key=lambda i: i.user.id)
+@app_commands.command(name="infosh",description="Lihat informasi harga saham dunia")
+@app_commands.describe(symbol="Simbol saham (contoh: AAPL, TSLA, BBCA.JK)")
     async def infosh(self, interaction: discord.Interaction, symbol: str):
         await interaction.response.defer()
         symbol = symbol.upper()
@@ -43,6 +45,8 @@ class StockCog(commands.Cog):
             await interaction.followup.send(embed=embed)
         except Exception as e:
             await interaction.followup.send(f"❌ Gagal mengambil data untuk `{symbol}`: {e}")
+           
+            @app_commands.checks.cooldown(rate=5, per=15.0, key=lambda i: (i.user.id))
 
     @app_commands.command(name="shbuy", description="Beli saham dengan nominal Rupiah")
     @app_commands.describe(symbol="Simbol saham", amount_idr="Jumlah uang dalam Rupiah")
@@ -77,6 +81,7 @@ class StockCog(commands.Cog):
             await interaction.followup.send(embed=embed)
         except Exception as e:
             await interaction.followup.send(f"❌ Gagal memproses pembelian: {e}")
+            @app_commands.checks.cooldown(rate=5, per=15.0, key=lambda i: i.user.id)
 
     @app_commands.command(name="portfolio", description="Lihat portofolio saham kamu")
     async def portfolio(self, interaction: discord.Interaction):
@@ -127,7 +132,8 @@ class StockCog(commands.Cog):
         )
         embed.set_footer(text="Update real-time dengan kurs saat beli pertama.")
         await interaction.followup.send(embed=embed)
-
+        
+@app_commands.checks.cooldown(rate=5, per=15.0, key=lambda i: i.user.id)
     @app_commands.command(name="detail", description="Riwayat harian saham yang kamu miliki")
     @app_commands.describe(symbol="Simbol saham di portofolio")
     async def detail(self, interaction: discord.Interaction, symbol: str):
